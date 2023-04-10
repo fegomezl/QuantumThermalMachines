@@ -47,10 +47,9 @@ function SystemBathHamiltonian(ϵ₀::Float64, Γ::Float64, ϵ::Array{Float64}, 
     return vcat(H₁, H₂)
 end
 
-
 function TunnelingRates(ΔV::Float64, Tₗ::Float64, Tᵣ::Float64, ϵ::Array{Float64}, γ::Array{Float64})
-    ρₗ = FermiDirac.(ϵ, ΔV, Tₗ)
-    ρᵣ = FermiDirac.(ϵ, 0.0, Tᵣ)
+    ρₗ = FermiDirac.(ϵ, ΔV/2, Tₗ)
+    ρᵣ = FermiDirac.(ϵ, -ΔV/2, Tᵣ)
     Γ₊ = vcat(γ.*ρₗ, γ.*ρᵣ, [0.0])
     Γ₋ = vcat(γ.*(1.0.-ρₗ), γ.*(1.0.-ρᵣ), [0.0])
     return Diagonal(Γ₊), Diagonal(Γ₋)
@@ -81,8 +80,8 @@ function RunMachine(ϵ₀::Float64, W::Float64, W°::Float64, Γ::Float64, ΔV::
     aₖc = Corr[1:L₁+L₂, 1+2(L₁+L₂)]
     caₖ = Corr[1+2(L₁+L₂), 1:L₁+L₂]
 
-    A = FermiDirac.(ϵ, ΔV, Tₗ).-real.(aₖaₖ)
-    B = (real.(aₖc)+real.(caₖ))./2
+    A = FermiDirac.(ϵ, ΔV/2, Tₗ).-real.(aₖaₖ)
+    B = real.(aₖc)+real.(caₖ)
 
     Jₚ = sum(γ.*A)
     Jₕ = sum(γ.*ϵ.*A .- √(Γ/(8π)).*(γ.^1.5).*B)
