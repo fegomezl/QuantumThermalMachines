@@ -4,15 +4,20 @@ using Roots
 using DataFrames
 using CSV
 
+# Fermi-Dirac distribution
 function FermiDirac(ϵ::Float64, μ::Float64, T::Float64)
     return 1/(1+exp((ϵ-μ)/T))
 end
 
+# Find the spacing in the logaritmic region, C = (W-W°)/Δϵ 
 function ExponentialRate(L::Int64, C::Float64)
     f(x) = x*(1-x^L)/(1-x+1e-9)-C
     return find_zero(f, (1, C), Bisection())
 end
 
+# Get energies and rates for a uniform bath with 
+# energy window [-W,W] and enhanced resolution in
+# [-W°,W°] with L₁ points inside and L₂ outside
 function BathSpectra(W::Float64, W°::Float64, L₁::Int64, L₂::Int64)
     Δϵ = 2*W°/(L₁-1)
     Φ = ExponentialRate(L₂÷2, (W-W°)/Δϵ)
@@ -35,7 +40,10 @@ function BathSpectra(W::Float64, W°::Float64, L₁::Int64, L₂::Int64)
     return ϵ, γ
 end
 
-function SystemBathHamiltonian(ϵ₀::Float64, Γ::Float64, ϵ::Array{Float64}, γ::Array{Float64})
+# Get the System-Lead Hamiltonian with 
+#
+# H = [ ...
+function SystemLeadHamiltonian(ϵ₀::Float64, Γ::Float64, ϵ::Array{Float64}, γ::Array{Float64})
     Hₛ = [ϵ₀]
     Hₗ = Diagonal(vcat(ϵ, ϵ))
 
@@ -56,7 +64,7 @@ function TunnelingRates(ΔV::Float64, Tₗ::Float64, Tᵣ::Float64, ϵ::Array{Fl
 end
 
 function Liouvillian(ϵ₀::Float64, Γ::Float64, ΔV::Float64, Tₗ::Float64, Tᵣ::Float64, ϵ::Array{Float64}, γ::Array{Float64})
-    H = SystemBathHamiltonian(ϵ₀, Γ, ϵ, γ)
+    H = SystemLeadHamiltonian(ϵ₀, Γ, ϵ, γ)
     Γ₊, Γ₋ = TunnelingRates(ΔV, Tₗ, Tᵣ, ϵ, γ)
     Ω = (Γ₋ - Γ₊)/2
 
