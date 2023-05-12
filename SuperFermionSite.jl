@@ -9,6 +9,9 @@ ITensors.state(::StateName"01", ::SiteType"SuperFermion") = [0., 1., 0., 0.]
 ITensors.state(::StateName"10", ::SiteType"SuperFermion") = [0., 0., 1., 0.]
 ITensors.state(::StateName"11", ::SiteType"SuperFermion") = [0., 0., 0., 1.]
 
+ITensors.state(::StateName"Vacuum", ::SiteType"SuperFermion") = [1., 0., 0., 1.]
+ITensors.state(::StateName"NormalizedVacuum", ::SiteType"SuperFermion") = [0.5, 0., 0., 0.5]
+
 #Create operators
 #P:Physical A:Ancilla
 
