@@ -1,53 +1,4 @@
-using LinearAlgebra
-using Roots
-using ITensors
-
-# Fermi-Dirac distribution
-function FermiDirac(ϵ::Float64, μ::Float64, T::Float64)
-    return 1/(1+exp((ϵ-μ)/T))
-end
-
-# Find the spacing in the logaritmic region:
-# Solve C from ϵ(n)=A+B*Cⁿ
-# With ϵ(0) = W°-Δϵ
-#      ϵ(1) = W°
-#      ϵ(L+1) = W
-# RHS = (W-W°)/Δϵ
-function ExponentialRate(L::Int64, RHS::Float64)
-    f(x) = x*(1-x^L)/(1-x+1e-9)-RHS
-    return find_zero(f, (1, RHS), Bisection()) 
-    #RHS is a high bound for the solution and allows to use bisection
-end
-
-# Get energies and spacings for a uniform bath with 
-# energy window [-W,W] and enhanced resolution in
-# [-W°,W°] with L₁ points inside and L₂ outside
-function BathSpectra(W::Float64, W°::Float64, L₁::Int64, L₂::Int64)
-
-    # Uniform energies
-    Δϵ = 2*W°/(L₁-1) 
-    ϵ₁ = [1:1:L₁÷2;]
-    ϵ₁ = Δϵ.*(ϵ₁.-0.5)
-
-    # Logarithmic energies
-    Φ = ExponentialRate(L₂÷2, (W-W°)/Δϵ)
-    ϵ₂ = [1:1:L₂÷2;]
-    ϵ₂ = W° .+ (W-W°).*(1.0.-Φ.^ϵ₂)./(1-Φ^(L₂÷2))
-
-    ϵ = vcat(reverse(-ϵ₂), reverse(-ϵ₁), ϵ₁, ϵ₂)
-
-    # Uniform spacing
-    γ₁ = Δϵ.*ones(L₁÷2)
-
-    # Logarithmic spacing
-    γ₂ = [1:1:L₂÷2;]
-    γ₂ = Δϵ.*Φ.^ϵ₂
-
-    γ = vcat(reverse(γ₂), reverse(γ₁), γ₁, γ₂)
-
-    return ϵ, γ
-end
-
+include("Misc.jl")
 include("SuperFermionSite.jl")
 
 function ParticleCurrentOperator(sites::Vector{<:Index}, ϵ::Array{Float64}, γ::Array{Float64}, V::Float64, T::Float64)
@@ -76,6 +27,70 @@ function EnergyCurrentOperator(sites::Vector{<:Index}, ϵ::Array{Float64}, γ::A
     return MPO(Ĵₕ, sites)
 end
 
+function BathGate(s1::Index, s2::Index, τ::Float64, ϵₛ::Float64, ϵ::Float64, γ::Float64, Γ::Float64, V::Float64, T::Float64, L::Int64)
+    ρ = FermiDirac(ϵ, V, T)
+    κ = √(Γ*γ/(2π))
+    h = -im*γ*ρ*op("I",s1)*op("I",s2)
+      + (ϵ-im*γ*(0.5-ρ))*op("nᴾ", s1)*op("I", s2)
+      - (ϵ+im*γ*(0.5-ρ))*op("nᴬ", s1)*op("I", s2)
+      + im*γ*ρ*op("b†ᴾ * b†ᴬ", s1)*op("I", s2)
+      + im*γ*(1-ρ)*op("bᴾ * bᴬ", s1)*op("I", s2)
+      + (ϵₛ/(2L))*op("I", s1)*(op("nᴾ", s2)-op("nᴬ", s2))
+      + κ*op("b†ᴾ * JWᴬ", s1)*op("bᴾ", s2)
+      + κ*op("bᴾ * JWᴬ", s1)*op("b†ᴾ", s2)
+      - κ*op("bᴬ", s1)*op("JWᴾ * b†ᴬ", s2)
+      - κ*op("b†ᴬ", s1)*op("JWᴾ * bᴬ", s2)
+    return exp(-im*τ*h)
+end
+
+function SystemGate(s1::Index, s2::Index, τ::Float64, ϵₛ::Float64, t::Float64, U::Float64)
+    h = 0.5*ϵₛ*(op("nᴾ", s1)-op("nᴬ", s1))*op("I", s2)
+      + 0.5*ϵₛ*op("I", s1)*(op("nᴾ", s2)-op("nᴬ", s2))
+      - t*op("b†ᴾ * JWᴬ", s1)*op("bᴾ", s2)
+      - t*op("bᴾ * JWᴬ", s1)*op("b†ᴾ", s2)
+      + t*op("b†ᴬ", s1)*op("JWᴾ * bᴬ", s2)
+      + t*op("bᴬ", s1)*op("JWᴾ * b†ᴬ", s2)
+      + U*op("nᴾ", s1)*op("nᴾ", s2)
+      - U*op("nᴬ", s1)*op("nᴬ", s2)
+    return exp(-im*τ*h)
+end
+
+function TimeEvolutionOperator(sites::Vector{<:Index}, δτ::Float64, ϵ₀::Float64, t::Float64, U::Float64, ϵ::Array{Float64}, γ::Array{Float64}, Γ::Float64, ΔV::Float64, Tₗ::Float64, Tᵣ::Float64, L::Int64, D::Int64)
+
+    LeftBathGates = ITensor[]
+    for n in 1:L
+        s1 = sites[L-n+1]
+        s2 = sites[L-n+2]
+        push!(LeftBathGates, BathGate(s1, s2, δτ/2, ϵ₀, ϵ[n], γ[n], Γ, -ΔV/2, Tₗ, L))
+        push!(LeftBathGates, op("SWAP", s1, s2))
+    end
+    append!(LeftBathGates, reverse(LeftBathGates))
+
+    RightBathGates = ITensor[]
+    for n in 1:L
+        s1 = sites[L+D+n-1]
+        s2 = sites[L+D+n]
+        push!(RightBathGates, BathGate(s2, s1, δτ/2, ϵ₀, ϵ[n], γ[n], Γ, ΔV/2, Tᵣ, L))
+        push!(RightBathGates, op("SWAP", s1, s2))
+    end
+    append!(RightBathGates, reverse(RightBathGates))
+
+    SystemGates = ITensor[]
+    for n in 1:D-1
+        s1 = sites[L+n]
+        s2 = sites[L+n+1]
+        push!(SystemGates, SystemGate(s1, s2, δτ/2, ϵ₀, t, U))
+    end
+
+    TimeEvolution = ITensor[]
+    append!(TimeEvolution, LeftBathGates)
+    append!(TimeEvolution, SystemGates)
+    append!(TimeEvolution, RightBathGates)
+    append!(TimeEvolution, reverse(SystemGates))
+
+    return TimeEvolution
+end
+
 #Machine parameters
 const ϵ₀ = 1.
 const t = 1.
@@ -86,21 +101,30 @@ const Tₗ = 10.
 const Tᵣ = 1.
 const W = 8.
 const W° = 4.
-const L₁ = 40
-const L₂ = 10
+const L₁ = 30
+const L₂ = 6
+const L = L₁+L₂
+const D = 3
 
-N = L₁+L₂+1
-sites = siteinds("SuperFermion", N)
+const δτ = 0.01
+const N = 5
+const χ = 220
 
-I_vacc = MPS(sites, ["Vacuum" for n in 1:N])
-ρ₀ = MPS(sites, ["NormalizedVacuum" for n in 1:N])
+let
+    sites = siteinds("SuperFermion", 2*L+D)
+    I_vacc = MPS(sites, ["Vacuum" for n in 1:length(sites)])
+    ρ̂ = MPS(sites, ["NormalizedVacuum" for n in 1:length(sites)])
 
-ϵ, γ = BathSpectra(W, W°, L₁, L₂)
-Ĵₚ = ParticleCurrentOperator(sites, ϵ, γ, -ΔV/2, Tₗ)
-Ĵₕ = EnergyCurrentOperator(sites, ϵ, γ, Γ, -ΔV/2, Tₗ)
+    ϵ, γ = BathSpectra(W, W°, L₁, L₂)
+    Ĵₚ = ParticleCurrentOperator(sites, ϵ, γ, -ΔV/2, Tₗ)
+    Ĵₕ = EnergyCurrentOperator(sites, ϵ, γ, Γ, -ΔV/2, Tₗ)
+    println(0., " ", inner(I_vacc', Ĵₚ, ρ̂), " ", inner(I_vacc', Ĵₕ, ρ̂))
 
-println(inner(I_vacc', Ĵₚ, ρ₀))
-println(sum(γ.*(FermiDirac.(ϵ,-ΔV/2,Tₗ).-0.5)))
+    Û = TimeEvolutionOperator(sites, δτ, ϵ₀, t, U, ϵ, γ, Γ, ΔV, Tₗ, Tᵣ, L, D)
+    for n in 1:N
+        ρ̂ = apply(Û, ρ̂; maxdim=χ)
+        println(n*δτ, " ", inner(I_vacc', Ĵₚ, ρ̂), " ", inner(I_vacc', Ĵₕ, ρ̂))
+    end
 
-println(inner(I_vacc', Ĵₕ, ρ₀))
-println(sum(γ.*ϵ.*(FermiDirac.(ϵ,-ΔV/2,Tₗ).-0.5)))
+    return
+end
