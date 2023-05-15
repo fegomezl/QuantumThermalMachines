@@ -1,3 +1,4 @@
+#!/usr/bin/julia
 include("Misc.jl")
 
 # Calculate the system-lead hamiltonian:
@@ -56,7 +57,7 @@ end
 #   -L₁: Points inside the enhanced resolution energy window.
 #   -L₂: Points outside the enhanced resolution energy window.
 function RunMachine(ϵ₀::Float64, W::Float64, W°::Float64, Γ::Float64, ΔV::Float64, Tₗ::Float64, Tᵣ::Float64, L₁::Int64, L₂::Int64)
-    print("Running for Γ="*string(Γ)*" ... ")
+    #print("Running for Γ="*string(Γ)*" ... ")
 
     ϵ, γ = BathSpectra(W, W°, L₁, L₂)
     L = Liouvillian(ϵ₀, Γ, ΔV, Tₗ, Tᵣ, ϵ, γ) 
@@ -79,7 +80,7 @@ function RunMachine(ϵ₀::Float64, W::Float64, W°::Float64, Γ::Float64, ΔV::
     Jₚ = sum(γ.*A)
     Jₕ = sum(γ.*ϵ.*A .- √(Γ/(8π)).*(γ.^1.5).*B)
 
-    println("Done!")
+    #println("Done!")
     return Jₚ, Jₕ
 end
 
@@ -90,12 +91,33 @@ const Tₗ = 1/8
 const Tᵣ = 1/8
 const W = 1.0
 const W° = 1/2
-const L₁ = 160
-const L₂ = 40
+# const L₁ = 160
+# const L₂ = 40
 
 #Sweep in tunneling strength
-Γ = LinRange(0.0, 0.5, 20)
-J = RunMachine.(ϵ₀, W, W°, Γ, ΔV, Tₗ, Tᵣ, L₁, L₂)
-J = reinterpret(reshape, Float64, J)
-data = DataFrame(Γ=Γ, Jₚ=J[1,:], Jₕ=J[2,:])
-CSV.write("data.csv", data)
+#println("Sweep in tunneling strength")
+# for L in [50, 100, 200]
+#     print("L=$L")
+#     L₁ = Int(0.8*L)
+#     L₂ = Int(0.2*L)
+#     Γ = LinRange(0.0, 0.5, 20)
+#     J = RunMachine.(ϵ₀, W, W°, Γ, ΔV, Tₗ, Tᵣ, L₁, L₂)
+#     J = reinterpret(reshape, Float64, J)
+#     data = DataFrame(Γ=Γ, Jₚ=J[1,:], Jₕ=J[2,:])
+#     CSV.write("1DResults/gamma_"*string(L)*".csv", data)
+# end
+
+#Currents vs Temperature
+println("Currents vs Temperature")
+Γ = 1/8
+for L in [50, 100, 200]
+    println("L=$L")
+    L₁ = Int(0.8*L)
+    L₂ = Int(0.2*L)
+    T = exp10.(range(-4,1,100))
+    print()
+    J = RunMachine.(ϵ₀, W, W°, Γ, ΔV, T, T, L₁, L₂)
+    J = reinterpret(reshape, Float64, J)
+    data = DataFrame(T=T, Jₚ=J[1,:], Jₕ=J[2,:])
+    CSV.write("1DResults/temp_"*string(L)*".csv", data)
+end
