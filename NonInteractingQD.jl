@@ -109,15 +109,27 @@ const W° = 1/2
 
 #Currents vs Temperature
 println("Currents vs Temperature")
-Γ = 1/8
+Γ₀ = 1/8
 for L in [50, 100, 200]
     println("L=$L")
     L₁ = Int(0.8*L)
     L₂ = Int(0.2*L)
-    T = exp10.(range(-4,1,100))
-    print()
-    J = RunMachine.(ϵ₀, W, W°, Γ, ΔV, T, T, L₁, L₂)
+    T = exp10.(range(-4.0,1.0,100))
+    J = RunMachine.(ϵ₀, W, W°, Γ₀, ΔV, T, T, L₁, L₂)
     J = reinterpret(reshape, Float64, J)
     data = DataFrame(T=T, Jₚ=J[1,:], Jₕ=J[2,:])
     CSV.write("1DResults/temp_"*string(L)*".csv", data)
+end
+
+#Currents vs single level energy
+println("Currents vs single level energy")
+for L in [20, 50, 100]
+    println("L=$L")
+    L₁ = Int(0.8*L)
+    L₂ = Int(0.2*L)
+    ϵ = LinRange(-1.0,1.0,100)
+    J = RunMachine.(ϵ, W, W°, Γ₀, ΔV, Tₗ, Tᵣ, L₁, L₂)
+    J = reinterpret(reshape, Float64, J)
+    data = DataFrame(ϵ=ϵ, Jₚ=J[1,:], Jₕ=J[2,:])
+    CSV.write("1DResults/energy_"*string(L)*".csv", data)
 end
