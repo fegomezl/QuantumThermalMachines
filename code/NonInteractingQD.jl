@@ -11,7 +11,7 @@ function SystemLeadHamiltonian(ϵ₀::Float64, Γ::Float64, ϵ::Array{Float64}, 
     Hₛ = [ϵ₀]
     Hₗ = Diagonal(vcat(ϵ, ϵ))
 
-    κ = sqrt.(Γ.*γ./(2π))
+    κ = @. √(Γ/(2π))*√γ
     Hₛₗ = vcat(κ, κ)
 
     H₁ = hcat(Hₗ, Hₛₗ)
@@ -24,10 +24,10 @@ end
 # Γ₋= diag(γ₁(1-ρ₁),γ₂(1-ρ₂),γ₃(1-ρ₃)...0) ρᵢ: Fermi-Dirac distribution on given lead
 # The zeroes correspond to system sites
 function TunnelingRates(ΔV::Float64, Tₗ::Float64, Tᵣ::Float64, ϵ::Array{Float64}, γ::Array{Float64})
-    ρₗ = FermiDirac.(ϵ, ΔV/2, Tₗ)
-    ρᵣ = FermiDirac.(ϵ, -ΔV/2, Tᵣ)
-    Γ₊ = vcat(γ.*ρₗ, γ.*ρᵣ, [0.0])
-    Γ₋ = vcat(γ.*(1.0.-ρₗ), γ.*(1.0.-ρᵣ), [0.0])
+    fₗ = FermiDirac.(ϵ, ΔV/2, Tₗ)
+    fᵣ = FermiDirac.(ϵ, -ΔV/2, Tᵣ)
+    Γ₊ = vcat(γ.*fₗ, γ.*fᵣ, [0.0])
+    Γ₋ = vcat(γ.*(1.0.-fₗ), γ.*(1.0.-fᵣ), [0.0])
     return Diagonal(Γ₊), Diagonal(Γ₋)
 end
 
@@ -57,30 +57,30 @@ end
 #   -L₁: Points inside the enhanced resolution energy window.
 #   -L₂: Points outside the enhanced resolution energy window.
 function RunMachine(ϵ₀::Float64, W::Float64, W°::Float64, Γ::Float64, ΔV::Float64, Tₗ::Float64, Tᵣ::Float64, L₁::Int64, L₂::Int64)
-    #print("Running for Γ="*string(Γ)*" ... ")
 
     ϵ, γ = BathSpectra(W, W°, L₁, L₂)
     L = Liouvillian(ϵ₀, Γ, ΔV, Tₗ, Tᵣ, ϵ, γ) 
 
-    λ, V = eigen(L)
+    # Diagonalize L = V⁻¹λV
+    λ, V = eigen(L,permute=false,scale=false)
     V⁻¹ = inv(V)
 
     #Dᵢ = { 1 ; imag(λᵢ)>0
     #     { 0 ; imag(λᵢ)<0
-    D = (sign.(imag.(λ)).+1)./2
+    D = @. (sign(imag(λ))+1)/2
     Corr = V*Diagonal(D)*V⁻¹
 
+    #Calculate the expected values for the currents
     aₖaₖ= diag(Corr)[1:L₁+L₂]
     aₖc = Corr[1:L₁+L₂, 1+2(L₁+L₂)]
     caₖ = Corr[1+2(L₁+L₂), 1:L₁+L₂]
 
-    A = FermiDirac.(ϵ, ΔV/2, Tₗ).-real.(aₖaₖ)
-    B = real.(aₖc)+real.(caₖ)
+    A = @. FermiDirac(ϵ, ΔV/2, Tₗ)-real(aₖaₖ)
+    B = @. real(aₖc)+real(caₖ)
 
-    Jₚ = sum(γ.*A)
-    Jₕ = sum(γ.*ϵ.*A .- √(Γ/(8π)).*(γ.^1.5).*B)
+    Jₚ = sum(@. γ*A)
+    Jₕ = sum(@. γ*ϵ*A - √(Γ/(8π))*(γ^1.5)*B)
 
-    #println("Done!")
     return Jₚ, Jₕ
 end
 
@@ -91,35 +91,35 @@ const Tₗ = 1/8
 const Tᵣ = 1/8
 const W = 1.0
 const W° = 1/2
-# const L₁ = 160
-# const L₂ = 40
+const Γ₀ = 1/8
 
-#Sweep in tunneling strength
-#println("Sweep in tunneling strength")
-# for L in [50, 100, 200]
-#     print("L=$L")
-#     L₁ = Int(0.8*L)
-#     L₂ = Int(0.2*L)
-#     Γ = LinRange(0.0, 0.5, 20)
-#     J = RunMachine.(ϵ₀, W, W°, Γ, ΔV, Tₗ, Tᵣ, L₁, L₂)
-#     J = reinterpret(reshape, Float64, J)
-#     data = DataFrame(Γ=Γ, Jₚ=J[1,:], Jₕ=J[2,:])
-#     CSV.write("1DResults/gamma_"*string(L)*".csv", data)
-# end
+#=Sweep in tunneling strength
+println("Sweep in tunneling strength")
+for L in [50, 100, 200]
+    print("L=$L")
+    L₁ = Int(0.8*L)
+    L₂ = Int(0.2*L)
+    Γ = LinRange(0.0, 0.5, 20)
+    J = RunMachine.(ϵ₀, W, W°, Γ, ΔV, Tₗ, Tᵣ, L₁, L₂)
+    J = reinterpret(reshape, Float64, J)
+    data = DataFrame(Γ=Γ, Jₚ=J[1,:], Jₕ=J[2,:])
+    CSV.write("results/gamma_"*string(L)*".csv", data)
+end
+=#
 
-#Currents vs Temperature
+#=Currents vs Temperature
 println("Currents vs Temperature")
-Γ₀ = 1/8
 for L in [50, 100, 200]
     println("L=$L")
     L₁ = Int(0.8*L)
     L₂ = Int(0.2*L)
     T = exp10.(range(-4.0,1.0,100))
-    J = RunMachine.(ϵ₀, W, W°, Γ₀, ΔV, T, T, L₁, L₂)
+    J = RunMachine.(ϵ₀, W, W°, Γ, ΔV, T, T, L₁, L₂)
     J = reinterpret(reshape, Float64, J)
     data = DataFrame(T=T, Jₚ=J[1,:], Jₕ=J[2,:])
-    CSV.write("1DResults/temp_"*string(L)*".csv", data)
+    CSV.write("results/temp_"*string(L)*".csv", data)
 end
+=#
 
 #Currents vs single level energy
 println("Currents vs single level energy")
@@ -131,5 +131,6 @@ for L in [20, 50, 100]
     J = RunMachine.(ϵ, W, W°, Γ₀, ΔV, Tₗ, Tᵣ, L₁, L₂)
     J = reinterpret(reshape, Float64, J)
     data = DataFrame(ϵ=ϵ, Jₚ=J[1,:], Jₕ=J[2,:])
-    CSV.write("1DResults/energy_"*string(L)*".csv", data)
+    CSV.write("results/energy_"*string(L)*".csv", data)
 end
+#

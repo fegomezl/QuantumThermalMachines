@@ -92,23 +92,24 @@ function TimeEvolutionOperator(sites::Vector{<:Index}, δτ::Float64, ϵ₀::Flo
 end
 
 #Machine parameters
-const ϵ₀ = 1.
-const t = 1.
+const ϵ₀ = 1/8 #1.
+const t = 0. #1.
 const U = 0. #1.2
-const Γ = 6.
-const ΔV = 1.
-const Tₗ = 10.
-const Tᵣ = 1.
-const W = 8.
-const W° = 4.
-const L₁ = 30
-const L₂ = 6
-const L = L₁+L₂
-const D = 3
+const Γ = 1/2 #6.
+const ΔV = 1/8 #1.
+const Tₗ = 1/8 #10.
+const Tᵣ = 1/8 #1.
+const W = 1. #8.
+const W° = 1/2 #4.
+const L₁ = 10 
+const L₂ = 2 
+const L = L₁+L₂ 
+const D = 1
 
-const δτ = 0.01
-const N = 5
-const χ = 220
+const δτ = 0.1
+const N = 100
+const n_print = 5
+const χ = 200
 
 let
     sites = siteinds("SuperFermion", 2*L+D)
@@ -118,12 +119,17 @@ let
     ϵ, γ = BathSpectra(W, W°, L₁, L₂)
     Ĵₚ = ParticleCurrentOperator(sites, ϵ, γ, -ΔV/2, Tₗ)
     Ĵₕ = EnergyCurrentOperator(sites, ϵ, γ, Γ, -ΔV/2, Tₗ)
-    println(0., " ", inner(I_vacc', Ĵₚ, ρ̂), " ", inner(I_vacc', Ĵₕ, ρ̂))
+    println("t,Jₚ,Jₕ")
+    println(0., ",", real(inner(I_vacc', Ĵₚ, ρ̂)), ",", real(inner(I_vacc', Ĵₕ, ρ̂)))
 
     Û = TimeEvolutionOperator(sites, δτ, ϵ₀, t, U, ϵ, γ, Γ, ΔV, Tₗ, Tᵣ, L, D)
     for n in 1:N
         ρ̂ = apply(Û, ρ̂; maxdim=χ)
-        println(n*δτ, " ", inner(I_vacc', Ĵₚ, ρ̂), " ", inner(I_vacc', Ĵₕ, ρ̂))
+        if n%n_print == 0
+            println(n*δτ,",", real(inner(I_vacc', Ĵₚ, ρ̂)),",", real(inner(I_vacc', Ĵₕ, ρ̂)))
+        else
+            println(n*δτ,",,")
+        end
     end
 
     return
