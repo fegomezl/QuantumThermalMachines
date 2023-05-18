@@ -30,6 +30,7 @@ end
 function BathGate(s1::Index, s2::Index, τ::Float64, ϵₛ::Float64, ϵ::Float64, γ::Float64, Γ::Float64, V::Float64, T::Float64, L::Int64)
     ρ = FermiDirac(ϵ, V, T)
     κ = √(Γ*γ/(2π))
+    
     h = -im*γ*ρ*op("I",s1)*op("I",s2)
       + (ϵ-im*γ*(0.5-ρ))*op("nᴾ", s1)*op("I", s2)
       - (ϵ+im*γ*(0.5-ρ))*op("nᴬ", s1)*op("I", s2)
@@ -101,17 +102,20 @@ const Tₗ = 1/8 #10.
 const Tᵣ = 1/8 #1.
 const W = 1. #8.
 const W° = 1/2 #4.
-const L₁ = 10 
+const L₁ = 4 
 const L₂ = 2 
 const L = L₁+L₂ 
 const D = 1
 
-const δτ = 0.1
-const N = 100
-const n_print = 5
-const χ = 200
+const δτ = 0.01
+const N = 1
+const n_print = 1
+const χ = 40
 
 let
+    println("Expected Values: Jₚ=0.0062268975080337265, Jₕ=0.0006487902180691001\n")
+    ITensors.enable_debug_checks()
+
     sites = siteinds("SuperFermion", 2*L+D)
     I_vacc = MPS(sites, ["Vacuum" for n in 1:length(sites)])
     ρ̂ = MPS(sites, ["NormalizedVacuum" for n in 1:length(sites)])
@@ -120,17 +124,21 @@ let
     Ĵₚ = ParticleCurrentOperator(sites, ϵ, γ, -ΔV/2, Tₗ)
     Ĵₕ = EnergyCurrentOperator(sites, ϵ, γ, Γ, -ΔV/2, Tₗ)
     println("t,Jₚ,Jₕ")
-    println(0., ",", real(inner(I_vacc', Ĵₚ, ρ̂)), ",", real(inner(I_vacc', Ĵₕ, ρ̂)))
-
+    println(0., ",", real(inner(I_vacc', Ĵₚ, ρ̂)), ",", real(inner(I_vacc', Ĵₕ, ρ̂)),",1")
+    
     Û = TimeEvolutionOperator(sites, δτ, ϵ₀, t, U, ϵ, γ, Γ, ΔV, Tₗ, Tᵣ, L, D)
+    @show Û
+    #=
     for n in 1:N
         ρ̂ = apply(Û, ρ̂; maxdim=χ)
+        trace = real(dot(I_vacc, ρ̂))
         if n%n_print == 0
-            println(n*δτ,",", real(inner(I_vacc', Ĵₚ, ρ̂)),",", real(inner(I_vacc', Ĵₕ, ρ̂)))
+            println(round(n*δτ, digits=2),",", real(inner(I_vacc', Ĵₚ, ρ̂))/trace,",", real(inner(I_vacc', Ĵₕ, ρ̂))/trace,",",trace)
         else
-            println(n*δτ,",,")
+            println(round(n*δτ, digits=2),",,,")
         end
     end
+    =#
 
     return
 end
