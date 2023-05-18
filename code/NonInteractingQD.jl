@@ -95,44 +95,50 @@ const W = 1.0
 const W° = 1/2
 const Γ₀ = 1/8
 
-#=Sweep in tunneling strength
-println("Sweep in tunneling strength")
-for L in [50, 100, 200]
-    println("L=$L")
-    L₁ = Int(0.8*L)
-    L₂ = Int(0.2*L)
-    Γ = LinRange(0.0, 0.5, 20)
-    J = RunMachine.(ϵ₀, W, W°, Γ, Vₗ, Vᵣ, Tₗ, Tᵣ, L₁, L₂)
-    J = reinterpret(reshape, Float64, J)    
-    data = DataFrame(Γ=Γ, Jₚ=J[1,:], Jₕ=J[2,:])
-    CSV.write("results/gamma_"*string(L)*".csv", data)
-end
-=#
+let
 
-#=Currents vs Temperature
-println("Currents vs Temperature")
-for L in [50, 100, 200]
-    println("L=$L")
-    L₁ = Int(0.8*L)
-    L₂ = Int(0.2*L)
-    T = exp10.(range(-4.0,1.0,100))
-    J = RunMachine.(ϵ₀, W, W°, Γ₀, Vₗ, Vᵣ, T, T, L₁, L₂)
-    J = reinterpret(reshape, Float64, J)
-    data = DataFrame(T=T, Jₚ=J[1,:], Jₕ=J[2,:])
-    CSV.write("results/temp_"*string(L)*".csv", data)
-end
-=#
+    #=Currents vs single level energy
+    println("Currents vs single level energy")
+    for L in [10*n for n ∈ 1:20]
+        println("L=$L")
+        L₁ = Int(0.8*L)
+        L₂ = Int(0.2*L)
+        ϵ = LinRange(-1.0,1.0,100)
+        J = RunMachine.(ϵ, W, W°, Γ₀, Vₗ, Vᵣ, Tₗ, Tᵣ, L₁, L₂)
+        J = reinterpret(reshape, Float64, J)
+        data = DataFrame(ϵ=ϵ, Jₚ=J[1,:], Jₕ=J[2,:])
+        CSV.write("results/energy_"*string(L)*".csv", data)
+    end
+    =#
 
-#=Currents vs single level energy
-println("Currents vs single level energy")
-for L in [20, 50, 100]
-    println("L=$L")
-    L₁ = Int(0.8*L)
-    L₂ = Int(0.2*L)
-    ϵ = LinRange(-1.0,1.0,100)
-    J = RunMachine.(ϵ, W, W°, Γ₀, Vₗ, Vᵣ, Tₗ, Tᵣ, L₁, L₂)
-    J = reinterpret(reshape, Float64, J)
-    data = DataFrame(ϵ=ϵ, Jₚ=J[1,:], Jₕ=J[2,:])
-    CSV.write("results/energy_"*string(L)*".csv", data)
+    #Currents vs temperature
+    println("Currents vs Temperature")
+    for L in [10*n for n ∈ 10:20]
+        println("L=$L")
+        L₁ = Int(0.8*L)
+        L₂ = Int(0.2*L)
+        T = exp10.(range(-4.0,1.0,100))
+        J = RunMachine.(ϵ₀, W, W°, Γ₀, Vₗ, Vᵣ, T, T, L₁, L₂)
+        J = reinterpret(reshape, Float64, J)
+        data = DataFrame(T=T, Jₚ=J[1,:], Jₕ=J[2,:])
+        CSV.write("results/temp_"*string(L)*".csv", data)
+    end
+    #
+    
+    #Currents vs tunneling strength
+    println("Sweep in tunneling strength")
+    for L in [10*n for n ∈ 1:20]
+        println("L=$L")
+        L₁ = Int(0.8*L)
+        L₂ = Int(0.2*L)
+        Γ = LinRange(0.0, 0.5, 20)
+        J = RunMachine.(ϵ₀, W, W°, Γ, Vₗ, Vᵣ, Tₗ, Tᵣ, L₁, L₂)
+        J = reinterpret(reshape, Float64, J)    
+        data = DataFrame(Γ=Γ, Jₚ=J[1,:], Jₕ=J[2,:])
+        CSV.write("results/gamma_"*string(L)*".csv", data)
+    end
+    #
+    
+    return
 end
-=#
+

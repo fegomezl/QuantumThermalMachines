@@ -5,7 +5,7 @@ using CSV
 
 # Fermi-Dirac distribution
 function FermiDirac(ϵ::Float64, μ::Float64, T::Float64)
-    return 1/(1+exp((ϵ-μ)/T))
+    return 1/(1+exp((ϵ-μ)/(T+1e-9)))
 end
 
 # Find the spacing in the logaritmic region:
