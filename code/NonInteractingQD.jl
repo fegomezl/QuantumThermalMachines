@@ -1,5 +1,6 @@
 #!/usr/bin/julia
 include("Misc.jl")
+using Tables
 
 # Calculate the system-lead hamiltonian:
 # H = [ Hₗ   Hₛₗ ]
@@ -75,7 +76,7 @@ function RunMachine(ϵ₀::Float64, W::Float64, W°::Float64, Γ::Float64, Vₗ:
     aₖc = Corr[1:L₁+L₂, 1+2(L₁+L₂)]
     caₖ = Corr[1+2(L₁+L₂), 1:L₁+L₂]
 
-    A = @. FermiDirac(ϵ, ΔV/2, Tₗ)-real(aₖaₖ)
+    A = @. FermiDirac(ϵ, Vₗ, Tₗ)-real(aₖaₖ)
     B = @. real(aₖc)+real(caₖ)
 
     Jₚ = sum(@. γ*A)
@@ -84,20 +85,20 @@ function RunMachine(ϵ₀::Float64, W::Float64, W°::Float64, Γ::Float64, Vₗ:
     return Jₚ, Jₕ
 end
 
-#Machine parameters
-const ϵ₀ = 1/8
-const Vₗ = 1/16
-const Vᵣ = -1/16
-const ΔV = 1/8
-const Tₗ = 1/8
-const Tᵣ = 1/8
-const W = 1.0
-const W° = 1/2
-const Γ₀ = 1/8
-
 let
 
-    #=Currents vs single level energy
+    #Machine parameters
+    ϵ₀ = 1/8
+    Vₗ = 1/16
+    Vᵣ = -1/16
+    ΔV = 1/8
+    Tₗ = 1/8
+    Tᵣ = 1/8
+    W = 1.
+    W° = 0.5
+    Γ₀ = 1/8
+
+    #Currents vs single level energy
     println("Currents vs single level energy")
     for L in [10*n for n ∈ 1:20]
         println("L=$L")
@@ -109,11 +110,11 @@ let
         data = DataFrame(ϵ=ϵ, Jₚ=J[1,:], Jₕ=J[2,:])
         CSV.write("results/energy_"*string(L)*".csv", data)
     end
-    =#
+    #
 
     #Currents vs temperature
     println("Currents vs Temperature")
-    for L in [10*n for n ∈ 10:20]
+    for L in [10*n for n ∈ 1:20]
         println("L=$L")
         L₁ = Int(0.8*L)
         L₂ = Int(0.2*L)
@@ -141,4 +142,3 @@ let
     
     return
 end
-
