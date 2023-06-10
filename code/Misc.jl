@@ -3,26 +3,32 @@ using Roots
 using DataFrames
 using CSV
 
-# Fermi-Dirac distribution
+"""
+ Fermi-Dirac distribution
+"""
 function FermiDirac(ϵ::Float64, μ::Float64, T::Float64)
     return 1/(1+exp((ϵ-μ)/(T+1e-9)))
 end
 
-# Find the spacing in the logaritmic region:
-# Solve C from ϵ(n)=A+B*Cⁿ
-# With ϵ(0) = W°-Δϵ
-#      ϵ(1) = W°
-#      ϵ(L+1) = W
-# RHS = (W-W°)/Δϵ
+"""
+ Find the spacing in the logaritmic region:
+ Solve C from ϵ(n)=A+B*Cⁿ
+ With ϵ(0) = W°-Δϵ
+      ϵ(1) = W°
+      ϵ(L+1) = W
+ RHS = (W-W°)/Δϵ
+"""
 function ExponentialRate(L::Int64, RHS::Float64)
     f(x) = x*(1-x^L)/(1-x+1e-9)-RHS
     return find_zero(f, (1, RHS), Bisection()) 
     #RHS is a high bound for the solution and allows to use bisection
 end
 
-# Get energies and spacings for a uniform bath with 
-# energy window [-W,W] and enhanced resolution in
-# [-W°,W°] with L₁ points inside and L₂ outside
+"""
+ Get energies and spacings for a uniform bath with 
+ energy window [-W,W] and enhanced resolution in
+ [-W°,W°] with L₁ points inside and L₂ outside
+"""
 function BathSpectra(W::Float64, W°::Float64, L₁::Int64, L₂::Int64)
 
     # Uniform energies

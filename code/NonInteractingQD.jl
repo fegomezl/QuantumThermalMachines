@@ -2,12 +2,14 @@
 include("Misc.jl")
 using Tables
 
-# Calculate the system-lead hamiltonian:
-# H = [ Hₗ   Hₛₗ ]
-#     [ Hₛₗ' Hₛ  ]
-# Hₗ = diag(ϵ₁,ϵ₂,ϵ₃,ϵ₄...) ϵᵢ: Energies from the leads
-# Hₛ = [ϵ₀] ~ Single site system
-# Hₛₗ = [κ₁,κ₂,κ₃,κ₄...] κᵢ = √(Γγᵢ/2π) γᵢ: Spacings from the leads
+"""
+ Calculate the system-lead hamiltonian:
+  H = [ Hₗ   Hₛₗ ]
+      [ Hₛₗ' Hₛ  ]
+ Hₗ = diag(ϵ₁,ϵ₂,ϵ₃,ϵ₄...) ϵᵢ: Energies from the leads
+ Hₛ = [ϵ₀] ~ Single site system
+ Hₛₗ = [κ₁,κ₂,κ₃,κ₄...] κᵢ = √(Γγᵢ/2π) γᵢ: Spacings from the leads
+"""
 function SystemLeadHamiltonian(ϵ₀::Float64, Γ::Float64, ϵ::Array{Float64}, γ::Array{Float64})
     Hₛ = [ϵ₀]
     Hₗ = Diagonal(vcat(ϵ, ϵ))
@@ -20,10 +22,12 @@ function SystemLeadHamiltonian(ϵ₀::Float64, Γ::Float64, ϵ::Array{Float64}, 
     return vcat(H₁, H₂)
 end
 
-# Calculate the tunneling rates 
-# Γ₊= diag(γ₁ρ₁,γ₂ρ₂,γ₃ρ₃...0) ρᵢ: Fermi-Dirac distribution on given lead
-# Γ₋= diag(γ₁(1-ρ₁),γ₂(1-ρ₂),γ₃(1-ρ₃)...0) ρᵢ: Fermi-Dirac distribution on given lead
-# The zeroes correspond to system sites
+"""
+ Calculate the tunneling rates 
+ Γ₊= diag(γ₁ρ₁,γ₂ρ₂,γ₃ρ₃...0) ρᵢ: Fermi-Dirac distribution on given lead
+ Γ₋= diag(γ₁(1-ρ₁),γ₂(1-ρ₂),γ₃(1-ρ₃)...0) ρᵢ: Fermi-Dirac distribution on given lead
+ The zeroes correspond to system sites
+"""
 function TunnelingRates(Vₗ::Float64, Vᵣ::Float64, Tₗ::Float64, Tᵣ::Float64, ϵ::Array{Float64}, γ::Array{Float64})
     fₗ = FermiDirac.(ϵ, Vₗ, Tₗ)
     fᵣ = FermiDirac.(ϵ, Vᵣ, Tᵣ)
@@ -32,9 +36,11 @@ function TunnelingRates(Vₗ::Float64, Vᵣ::Float64, Tₗ::Float64, Tᵣ::Float
     return Diagonal(Γ₊), Diagonal(Γ₋)
 end
 
-# Create the liouvillian for the whole system:
-# L = [H-iΩ  iΓ₊ ]
-#     [iΓ₋   H+iΩ]
+"""
+ Create the liouvillian for the whole system:
+ L = [H-iΩ  iΓ₊ ]
+     [iΓ₋   H+iΩ]
+"""
 function Liouvillian(ϵ₀::Float64, Γ::Float64, Vₗ::Float64, Vᵣ::Float64, Tₗ::Float64, Tᵣ::Float64, ϵ::Array{Float64}, γ::Array{Float64})
     H = SystemLeadHamiltonian(ϵ₀, Γ, ϵ, γ)
     Γ₊, Γ₋ = TunnelingRates(Vₗ, Vᵣ, Tₗ, Tᵣ, ϵ, γ)
@@ -45,18 +51,20 @@ function Liouvillian(ϵ₀::Float64, Γ::Float64, Vₗ::Float64, Vᵣ::Float64, 
     return vcat(L₁, L₂)
 end
 
-# Perform the simulation for a given set of parameters and return the corresponding
-# particle and energy currents Jₚ, Jₕ.
-# Parameters:
-#   -ϵ₀: Single site energy of the system
-#   -W: Energy window for the bath
-#   -W°: Enhanced resolution energy window for the bath
-#   -Γ: Tunneling rate for the bath
-#   -ΔV: Potential difference
-#   -Tₗ: Left temperature
-#   -Tᵣ: Right temperature
-#   -L₁: Points inside the enhanced resolution energy window.
-#   -L₂: Points outside the enhanced resolution energy window.
+"""
+ Perform the simulation for a given set of parameters and return the corresponding
+ particle and energy currents Jₚ, Jₕ.
+ Parameters:
+   -ϵ₀: Single site energy of the system
+   -W: Energy window for the bath
+   -W°: Enhanced resolution energy window for the bath
+   -Γ: Tunneling rate for the bath
+   -ΔV: Potential difference
+   -Tₗ: Left temperature
+   -Tᵣ: Right temperature
+   -L₁: Points inside the enhanced resolution energy window.
+   -L₂: Points outside the enhanced resolution energy window.
+"""
 function RunMachine(ϵ₀::Float64, W::Float64, W°::Float64, Γ::Float64, Vₗ::Float64, Vᵣ::Float64, Tₗ::Float64, Tᵣ::Float64, L₁::Int64, L₂::Int64)
 
     ϵ, γ = BathSpectra(W, W°, L₁, L₂)
