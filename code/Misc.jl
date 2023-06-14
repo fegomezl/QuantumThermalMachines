@@ -48,9 +48,12 @@ function BathSpectra(W::Float64, W°::Float64, L₁::Int64, L₂::Int64)
 
     # Logarithmic energies
     OuterRange = 1:L₂÷2
-    Φ = ExponentialRate(L₂÷2, (W-W°)/Δϵ)
-    ϵ₂ = @. W° + ((W-W°)/(1.0-Φ^(L₂÷2)))*(1.0-Φ^OuterRange)
-    γ₂ = @. Δϵ*Φ.^OuterRange
+    #Φ = ExponentialRate(L₂÷2, (W-W°)/Δϵ)
+    #ϵ₂ = @. W° + ((W-W°)/(1.0-Φ^(L₂÷2)))*(1.0-Φ^OuterRange)
+    #γ₂ = @. Δϵ*Φ.^OuterRange
+    ϕ = (W/W°)^(2.0/L₂)
+    ϵ₂ = @. W°*ϕ^OuterRange
+    γ₂ = @. W°*(1.0 - 1.0/ϕ)*ϕ^OuterRange
 
     # Organice all
     ϵ = vcat(reverse(-ϵ₂), reverse(-ϵ₁), ϵ₁, ϵ₂)

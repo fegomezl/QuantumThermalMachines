@@ -71,7 +71,8 @@ function RunMachine(ϵ₀::Float64, W::Float64, W°::Float64, Γ::Float64, Vₗ:
     L = Liouvillian(ϵ₀, Γ, Vₗ, Vᵣ, Tₗ, Tᵣ, ϵ, γ) 
 
     # Diagonalize L = V⁻¹λV
-    λ, V = eigen(L)
+    #λ, V = eigen(L)
+    λ, V = eigs(A, nev = 2);
     V⁻¹ = inv(V)
 
     #Dᵢ = { 1 ; imag(λᵢ)>0
