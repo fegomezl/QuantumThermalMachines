@@ -71,12 +71,12 @@ function RunMachine(ϵ₀::Float64, W::Float64, W°::Float64, Γ::Float64, Vₗ:
     L = Liouvillian(ϵ₀, Γ, Vₗ, Vᵣ, Tₗ, Tᵣ, ϵ, γ) 
 
     # Diagonalize L = V⁻¹λV
-    λ, V = eigen(L,permute=false,scale=false)
+    λ, V = eigen(L)
     V⁻¹ = inv(V)
 
     #Dᵢ = { 1 ; imag(λᵢ)>0
     #     { 0 ; imag(λᵢ)<0
-    D = @. (sign(imag(λ))+1)/2
+    D = @. (sign(imag(λ))+1.0)/2
     Corr = V*Diagonal(D)*V⁻¹
 
     #Calculate the expected values for the currents
@@ -108,7 +108,7 @@ let
 
     #Currents vs single level energy
     println("Currents vs single level energy")
-    for L in [10*n for n ∈ 1:20]
+    for L in [20*n for n ∈ 1:10]
         println("L=$L")
         L₁ = Int(0.8*L)
         L₂ = Int(0.2*L)
@@ -122,11 +122,11 @@ let
 
     #Currents vs temperature
     println("Currents vs Temperature")
-    for L in [10*n for n ∈ 1:20]
+    for L in [20*n for n ∈ 1:10]
         println("L=$L")
         L₁ = Int(0.8*L)
         L₂ = Int(0.2*L)
-        T = exp10.(range(-4.0,1.0,100))
+        T = 10 .^ range(-4.0, 1.0, length = 100)
         J = RunMachine.(ϵ₀, W, W°, Γ₀, Vₗ, Vᵣ, T, T, L₁, L₂)
         J = reinterpret(reshape, Float64, J)
         data = DataFrame(T=T, Jₚ=J[1,:], Jₕ=J[2,:])
@@ -136,7 +136,7 @@ let
     
     #Currents vs tunneling strength
     println("Sweep in tunneling strength")
-    for L in [10*n for n ∈ 1:20]
+    for L in [20*n for n ∈ 1:10]
         println("L=$L")
         L₁ = Int(0.8*L)
         L₂ = Int(0.2*L)
