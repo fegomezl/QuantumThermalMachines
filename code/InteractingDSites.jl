@@ -131,8 +131,8 @@ let
     ρ̂ = MPS(sites, ["NormalizedVacuum" for n in 1:length(sites)])
 
     ϵ, γ = BathSpectra(W, W°, L₁, L₂)
-    Ĵₚ = ParticleCurrentOperator(sites, ϵ, γ, -ΔV/2, Tₗ)
-    Ĵₕ = EnergyCurrentOperator(sites, ϵ, γ, Γ, -ΔV/2, Tₗ)
+    Ĵₚ = ParticleCurrentOperator(sites, ϵ, γ, ΔV/2, Tᵣ)
+    Ĵₕ = EnergyCurrentOperator(sites, ϵ, γ, Γ, ΔV/2, Tᵣ)
 
     println("t,Jₚ,Jₕ")
     println(0., ",", real(inner(I_vacc', Ĵₚ, ρ̂)), ",", real(inner(I_vacc', Ĵₕ, ρ̂)), ",1")
