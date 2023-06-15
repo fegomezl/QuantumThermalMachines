@@ -31,28 +31,28 @@ function BathGate(s1::Index, s2::Index, τ::Float64, ϵₛ::Float64, ϵ::Float64
     ρ = FermiDirac(ϵ, V, T)
     κ = √(Γ*γ/(2π))
     
-    h = -im*γ*ρ*op("I",s1)*op("I",s2)
-      + (ϵ-im*γ*(0.5-ρ))*op("nᴾ", s1)*op("I", s2)
-      - (ϵ+im*γ*(0.5-ρ))*op("nᴬ", s1)*op("I", s2)
-      + im*γ*ρ*op("b†ᴾ * b†ᴬ", s1)*op("I", s2)
-      + im*γ*(1-ρ)*op("bᴾ * bᴬ", s1)*op("I", s2)
-      + (ϵₛ/(2L))*op("I", s1)*(op("nᴾ", s2)-op("nᴬ", s2))
-      + κ*op("b†ᴾ * JWᴬ", s1)*op("bᴾ", s2)
-      + κ*op("bᴾ * JWᴬ", s1)*op("b†ᴾ", s2)
-      - κ*op("bᴬ", s1)*op("JWᴾ * b†ᴬ", s2)
-      - κ*op("b†ᴬ", s1)*op("JWᴾ * bᴬ", s2)
+    h = -im*γ*ρ*op("I",s1)*op("I",s2) +
+        (ϵ-im*γ*(0.5-ρ))*op("nᴾ", s1)*op("I", s2) -
+        (ϵ+im*γ*(0.5-ρ))*op("nᴬ", s1)*op("I", s2) +
+        im*γ*ρ*op("b†ᴾ * b†ᴬ", s1)*op("I", s2) +
+        im*γ*(1-ρ)*op("bᴾ * bᴬ", s1)*op("I", s2) +
+        (ϵₛ/(2L))*op("I", s1)*(op("nᴾ", s2)-op("nᴬ", s2)) +
+        κ*op("b†ᴾ * JWᴬ", s1)*op("bᴾ", s2) +
+        κ*op("bᴾ * JWᴬ", s1)*op("b†ᴾ", s2) -
+        κ*op("bᴬ", s1)*op("JWᴾ * b†ᴬ", s2) -
+        κ*op("b†ᴬ", s1)*op("JWᴾ * bᴬ", s2)
     return exp(-im*τ*h)
 end
 
 function SystemGate(s1::Index, s2::Index, τ::Float64, ϵₛ::Float64, t::Float64, U::Float64)
-    h = 0.5*ϵₛ*(op("nᴾ", s1)-op("nᴬ", s1))*op("I", s2)
-      + 0.5*ϵₛ*op("I", s1)*(op("nᴾ", s2)-op("nᴬ", s2))
-      - t*op("b†ᴾ * JWᴬ", s1)*op("bᴾ", s2)
-      - t*op("bᴾ * JWᴬ", s1)*op("b†ᴾ", s2)
-      + t*op("b†ᴬ", s1)*op("JWᴾ * bᴬ", s2)
-      + t*op("bᴬ", s1)*op("JWᴾ * b†ᴬ", s2)
-      + U*op("nᴾ", s1)*op("nᴾ", s2)
-      - U*op("nᴬ", s1)*op("nᴬ", s2)
+    h = 0.5*ϵₛ*(op("nᴾ", s1)-op("nᴬ", s1))*op("I", s2) +
+        0.5*ϵₛ*op("I", s1)*(op("nᴾ", s2)-op("nᴬ", s2)) -
+        t*op("b†ᴾ * JWᴬ", s1)*op("bᴾ", s2) -
+        t*op("bᴾ * JWᴬ", s1)*op("b†ᴾ", s2) +
+        t*op("b†ᴬ", s1)*op("JWᴾ * bᴬ", s2) +
+        t*op("bᴬ", s1)*op("JWᴾ * b†ᴬ", s2) +
+        U*op("nᴾ", s1)*op("nᴾ", s2) -
+        U*op("nᴬ", s1)*op("nᴬ", s2)
     return exp(-im*τ*h)
 end
 
@@ -115,11 +115,11 @@ const W° = 1/2 #4.
 const L₁ = 4 
 const L₂ = 2 
 const L = L₁+L₂ 
-const D = 2
+const D = 1
 
 const δτ = 0.05
-const N = 10
-const n_print = 1
+const N = 2500
+const n_print = 100
 const χ = 40
 
 let
@@ -131,8 +131,8 @@ let
     ρ̂ = MPS(sites, ["NormalizedVacuum" for n in 1:length(sites)])
 
     ϵ, γ = BathSpectra(W, W°, L₁, L₂)
-    Ĵₚ = ParticleCurrentOperator(sites, ϵ, γ, -ΔV/2, Tₗ)
-    Ĵₕ = EnergyCurrentOperator(sites, ϵ, γ, Γ, -ΔV/2, Tₗ)
+    Ĵₚ = ParticleCurrentOperator(sites, ϵ, γ, ΔV/2, Tᵣ)
+    Ĵₕ = EnergyCurrentOperator(sites, ϵ, γ, Γ, ΔV/2, Tᵣ)
 
     println("t,Jₚ,Jₕ")
     println(0., ",", real(inner(I_vacc', Ĵₚ, ρ̂)), ",", real(inner(I_vacc', Ĵₕ, ρ̂)), ",1")
