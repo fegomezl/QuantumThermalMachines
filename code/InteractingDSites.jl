@@ -103,15 +103,15 @@ function TimeEvolutionOperator(sites::Vector{<:Index}, δτ::Float64, ϵ₀::Flo
 end
 
 #Machine parameters
-const ϵ₀ = 1/8 #1.
-const t = 1. #1.
-const U = 1. #1.2
-const Γ = 1/8 #6.
-const ΔV = 1/8 #1.
-const Tₗ = 1/8 #10.
-const Tᵣ = 1/8 #1.
-const W = 1. #8.
-const W° = 1/2 #4.
+const ϵ₀ = 1/8 
+const t = 0. 
+const U = 0. 
+const Γ = 0.#1/8 
+const ΔV = 1/8 
+const Tₗ = 1/8 
+const Tᵣ = 1/8 
+const W = 1.
+const W° = 1/2 
 const L₁ = 4 
 const L₂ = 2 
 const L = L₁+L₂ 
@@ -124,7 +124,6 @@ const χ = 40
 
 let
     println("Expected Values: Jₚ=0.0062268975015, Jₕ=0.0006487902177\n")
-    ITensors.enable_debug_checks()
 
     sites = siteinds("SuperFermion", 2*L+D)
     I_vacc = MPS(sites, ["Vacuum" for n in 1:length(sites)])
@@ -133,11 +132,10 @@ let
     ϵ, γ = BathSpectra(W, W°, L₁, L₂)
     Ĵₚ = ParticleCurrentOperator(sites, ϵ, γ, ΔV/2, Tᵣ)
     Ĵₕ = EnergyCurrentOperator(sites, ϵ, γ, Γ, ΔV/2, Tᵣ)
+    Û = TimeEvolutionOperator(sites, δτ, ϵ₀, t, U, ϵ, γ, Γ, ΔV, Tₗ, Tᵣ, L, D)
 
     println("t,Jₚ,Jₕ")
-    println(0., ",", real(inner(I_vacc', Ĵₚ, ρ̂)), ",", real(inner(I_vacc', Ĵₕ, ρ̂)), ",1")
-    
-    Û = TimeEvolutionOperator(sites, δτ, ϵ₀, t, U, ϵ, γ, Γ, ΔV, Tₗ, Tᵣ, L, D)
+    println(0., ",", real(inner(I_vacc', Ĵₚ, ρ̂)), ",", real(inner(I_vacc', Ĵₕ, ρ̂)), ",1") 
     for n in 1:N
         ρ̂ = apply(Û, ρ̂; maxdim=χ)
         if n%n_print == 0
@@ -147,6 +145,5 @@ let
             println(round(n*δτ, digits=2),",,,")
         end
     end
-
     return
 end
