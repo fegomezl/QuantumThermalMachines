@@ -104,8 +104,8 @@ end
 
 #Machine parameters
 const ϵ₀ = 1/8 #1.
-const t = 1. #1.
-const U = 1. #1.2
+const t = 0. #1.
+const U = 0. #1.2
 const Γ = 1/8 #6.
 const ΔV = 1/8 #1.
 const Tₗ = 1/8 #10.
@@ -118,8 +118,8 @@ const L = L₁+L₂
 const D = 1
 
 const δτ = 0.05
-const N = 2500
-const n_print = 100
+const N = 1000
+const n_print = 50
 const χ = 40
 
 let
@@ -131,8 +131,8 @@ let
     ρ̂ = MPS(sites, ["NormalizedVacuum" for n in 1:length(sites)])
 
     ϵ, γ = BathSpectra(W, W°, L₁, L₂)
-    Ĵₚ = ParticleCurrentOperator(sites, ϵ, γ, ΔV/2, Tᵣ)
-    Ĵₕ = EnergyCurrentOperator(sites, ϵ, γ, Γ, ΔV/2, Tᵣ)
+    Ĵₚ = ParticleCurrentOperator(sites, ϵ, γ, -ΔV/2, Tₗ)
+    Ĵₕ = EnergyCurrentOperator(sites, ϵ, γ, Γ, -ΔV/2, Tₗ)
 
     println("t,Jₚ,Jₕ")
     println(0., ",", real(inner(I_vacc', Ĵₚ, ρ̂)), ",", real(inner(I_vacc', Ĵₕ, ρ̂)), ",1")
