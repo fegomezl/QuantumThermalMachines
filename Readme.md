@@ -31,7 +31,14 @@ From the repo directory type
 julia code/NonInteractingQD.jl
 ```
 
-The results will be saved in the results directory. To visualize the results, you can use the Jupyter Notebook provided the code directory. 
+The results will be saved in the results directory. To visualize the results, you can use the Jupyter Notebook provided the code directory. For the efficiency and power heatmaps, run 
+```
+julia code/NonInteractingQD_2D.jl
+```
+This will take a while... To plot the results:
+```
+python code/Heat_map_plot.py
+```
 
 
 ## Running the Interactive system

@@ -103,23 +103,23 @@ function TimeEvolutionOperator(sites::Vector{<:Index}, δτ::Float64, ϵ₀::Flo
 end
 
 #Machine parameters
-const ϵ₀ = 1/8 
-const t = 0. 
-const U = 0. 
-const Γ = 0.#1/8 
-const ΔV = 1/8 
-const Tₗ = 1/8 
-const Tᵣ = 1/8 
-const W = 1.
-const W° = 1/2 
+const ϵ₀ = 1/8 #1.
+const t = 0. #1.
+const U = 0. #1.2
+const Γ = 1/8 #6.
+const ΔV = 1/8 #1.
+const Tₗ = 1/8 #10.
+const Tᵣ = 1/8 #1.
+const W = 1. #8.
+const W° = 1/2 #4.
 const L₁ = 4 
 const L₂ = 2 
 const L = L₁+L₂ 
 const D = 1
 
 const δτ = 0.05
-const N = 2500
-const n_print = 100
+const N = 1000
+const n_print = 50
 const χ = 40
 
 let

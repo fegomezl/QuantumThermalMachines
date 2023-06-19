@@ -1,6 +1,5 @@
 #!/usr/bin/julia
 include("Misc.jl")
-using DataFrames
 
 """
  Calculate the system-lead hamiltonian:
@@ -108,6 +107,7 @@ let
     result_df = DataFrame(ΔV = Float64[], μϵ_W = Float64[], η_ηc = Float64[], P_w2 = Float64[])
 
     #=
+    # This is an equivalent way of doing it. We found that as long L is big enougth, they are the same. This one is a bit less stable.
     ϵ = 1/8
     # To do the 2D heat maps in Fig 8 of the Guide paper
     for ΔV in range(-0.1*W, 0.1*W, length = 50)
@@ -137,9 +137,9 @@ let
     =#
 
     # To do the 2D heat maps in Fig 8 of the Guide paper
-    for ΔV in range(-0.1*W, 0.1*W, length = 200)
+    for ΔV in range(-0.1*W, 0.1*W, length = 80)
         println("ΔV = ", ΔV)
-        for ϵ in range(-1.0*W, 1.0*W, length = 200)
+        for ϵ in range(-1.0*W, 1.0*W, length = 80)
             Vₗ = ΔV/2
             Vᵣ = -ΔV/2
             Jₚ, Jₕ = RunMachine(ϵ, W, W°, Γ₀, Vₗ, Vᵣ, Tₗ, Tᵣ, L₁, L₂)
@@ -162,7 +162,7 @@ let
     end
 
     # Save the data frame to a CSV file
-    CSV.write("heatmap_data.csv", result_df)
+    CSV.write("results/heatmap_data.csv", result_df)
     
     return
 end
