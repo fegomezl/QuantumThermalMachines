@@ -63,19 +63,19 @@ function SystemGate(s1::Index, s2::Index, τ::Float64, ϵₛ::Float64, t::Float6
     return exp(-im*τ*h)
 end
 
-function TimeEvolutionOperator(sites::Vector{<:Index}, δτ::Float64, ϵ₀::Float64, t::Float64, U::Float64, ϵ::Array{Float64}, γ::Array{Float64}, Γ::Float64, ΔV::Float64, Tₗ::Float64, Tᵣ::Float64, L::Int64, D::Int64)
+function TimeEvolutionOperator(sites::Vector{<:Index}, δτ::Float64, ϵ₀::Float64, t::Float64, U::Float64, ϵ::Array{Float64}, γ::Array{Float64}, Γ::Float64, Vₗ::Float64, Vᵣ::Float64, Tₗ::Float64, Tᵣ::Float64, L::Int64, D::Int64)
 
     LeftBathGates = ITensor[]
     for n in 1:L
         s1 = sites[L-n+1]
         s2 = sites[L-n+2]
-        push!(LeftBathGates, BathGate(s1, s2, δτ/2, ϵ₀, ϵ[n], γ[n], Γ, -ΔV/2, Tₗ, L))
+        push!(LeftBathGates, BathGate(s1, s2, δτ/2, ϵ₀, ϵ[n], γ[n], Γ, Vₗ, Tₗ, L))
         push!(LeftBathGates, op("SWAP", s1, s2))
     end
     for n in 1:L
         s1 = sites[n]
         s2 = sites[n+1]
-        push!(LeftBathGates, BathGate(s2, s1, δτ/2, ϵ₀, ϵ[L-n+1], γ[L-n+1], Γ, -ΔV/2, Tₗ, L))
+        push!(LeftBathGates, BathGate(s2, s1, δτ/2, ϵ₀, ϵ[L-n+1], γ[L-n+1], Γ, Vₗ, Tₗ, L))
         push!(LeftBathGates, op("SWAP", s2, s1))
     end
 
@@ -83,13 +83,13 @@ function TimeEvolutionOperator(sites::Vector{<:Index}, δτ::Float64, ϵ₀::Flo
     for n in 1:L
         s1 = sites[L+D+n-1]
         s2 = sites[L+D+n]
-        push!(RightBathGates, BathGate(s2, s1, δτ/2, ϵ₀, ϵ[n], γ[n], Γ, ΔV/2, Tᵣ, L))
+        push!(RightBathGates, BathGate(s2, s1, δτ/2, ϵ₀, ϵ[n], γ[n], Γ, Vᵣ, Tᵣ, L))
         push!(RightBathGates, op("SWAP", s2, s1))
     end
     for n in 1:L
         s1 = sites[2L+D-n]
         s2 = sites[2L+D-n+1]
-        push!(RightBathGates, BathGate(s1, s2, δτ/2, ϵ₀, ϵ[L-n+1], γ[L-n+1], Γ, ΔV/2, Tᵣ, L))
+        push!(RightBathGates, BathGate(s1, s2, δτ/2, ϵ₀, ϵ[L-n+1], γ[L-n+1], Γ, Vᵣ, Tᵣ, L))
         push!(RightBathGates, op("SWAP", s1, s2))
     end
 
@@ -109,18 +109,20 @@ function TimeEvolutionOperator(sites::Vector{<:Index}, δτ::Float64, ϵ₀::Flo
     return TimeEvolution
 end
 
+
 #Machine parameters
 const ϵ₀ = 1.
 const t = 1.
-const U = 1. #1.2
-const Γ = 8.
-const ΔV = 1.
-const Tₗ = 10.
-const Tᵣ = 1.
+const U = 1.2 
 const W = 8.
 const W° = 4.
-const L₁ = 4 
-const L₂ = 2 
+const Γ = 3.
+const Vₗ = -0.5
+const Vᵣ = 0.5
+const Tₗ = 10.
+const Tᵣ = 1.
+const L₁ = 80 
+const L₂ = 20 
 const L = L₁+L₂ 
 const D = 3
 
@@ -130,18 +132,16 @@ const n_print = 50
 const χ = 40
 
 let
-    #println("Expected Values: Jₚ=0.0062268975015, Jₕ=0.0006487902177\n")
-
     sites = siteinds("SuperFermion", 2*L+D)
     I_vacc = MPS(sites, ["Vacuum" for n in 1:length(sites)])
     ρ̂ = MPS(sites, ["NormalizedVacuum" for n in 1:length(sites)])
 
     ϵ, γ = BathSpectra(W, W°, L₁, L₂)
-    Ĵₚᴸ = BathParticleCurrentOperator(sites, ϵ, γ, 0, -ΔV/2, Tₗ)
-    Ĵₚᴿ = BathParticleCurrentOperator(sites, ϵ, γ, L+D, ΔV/2, Tᵣ)
+    Ĵₚᴸ = BathParticleCurrentOperator(sites, ϵ, γ, 0, Vₗ, Tₗ)
+    Ĵₚᴿ = BathParticleCurrentOperator(sites, ϵ, γ, L+D, Vᵣ, Tᵣ)
     Ĵₚ¹² = SystemParticleCurrentOperator(sites, L+1, L+2, t)
     Ĵₚ²³ = SystemParticleCurrentOperator(sites, L+2, L+3, t)
-    Û = TimeEvolutionOperator(sites, δτ, ϵ₀, t, U, ϵ, γ, Γ, ΔV, Tₗ, Tᵣ, L, D)
+    Û = TimeEvolutionOperator(sites, δτ, ϵ₀, t, U, ϵ, γ, Γ, Vₗ, Vᵣ, Tₗ, Tᵣ, L, D)
 
     println("t,Jₚᴸ,Jₚᴿ,Jₚ¹²,Jₚ²³, trace")
     println(0., ",", 
