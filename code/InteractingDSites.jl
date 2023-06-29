@@ -121,8 +121,8 @@ const Vₗ = -0.5
 const Vᵣ = 0.5
 const Tₗ = 10.
 const Tᵣ = 1.
-const L₁ = 80 
-const L₂ = 20 
+const L₁ = 4 
+const L₂ = 2 
 const L = L₁+L₂ 
 const D = 3
 
